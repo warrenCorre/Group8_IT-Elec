@@ -1,4 +1,4 @@
-USE laravel_db;
+USE group8_db;
 
 UPDATE members SET skills = '["Full-Stack Dev","Team Leadership","Project Mgmt"]' WHERE name = 'Michael Salvado';
 UPDATE members SET skills = '["Backend Dev","Database Design","API Dev"]' WHERE name = 'Jefril Intima';

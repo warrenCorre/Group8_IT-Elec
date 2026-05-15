@@ -1,4 +1,4 @@
-﻿USE laravel_db;
+﻿USE group8_db;
 INSERT INTO members (name, role, image, bio, age, year, email, skills, member_order, created_at, updated_at) 
 VALUES ('Michael Salvado', 'TEAM LEADER', 'michael.jpg', 'Michael is a full-stack web developer and front-end engineer. He has experience leading teams and managing projects.', 22, '3rd Year', 'michael.salvado@group8.com', '["Web Developer", "Team Leadership", "Project Management"]', 1, NOW(), NOW());
 

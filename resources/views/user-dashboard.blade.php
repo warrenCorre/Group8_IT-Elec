@@ -74,14 +74,6 @@
             margin: 0;
             font-size: 1.5rem;
             color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-header i {
-            color: #4a7856;
-            font-size: 1.5rem;
         }
 
         .card-body {
@@ -107,7 +99,6 @@
             margin: 0;
         }
 
-        /* Member Card - Same style as public members page */
         .member-card {
             background: #2d2d2d;
             border-radius: 12px;
@@ -220,11 +211,6 @@
             font-size: 0.9rem;
         }
 
-        .form-label i {
-            color: #4a7856;
-            margin-right: 8px;
-        }
-
         .form-control {
             width: 100%;
             padding: 12px 15px;
@@ -234,12 +220,18 @@
             border-radius: 8px;
             font-size: 1rem;
             transition: all 0.2s;
+            box-sizing: border-box;
         }
 
         .form-control:focus {
             outline: none;
             border-color: #4a7856;
             box-shadow: 0 0 0 3px rgba(74, 120, 86, 0.2);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
         }
 
         .row {
@@ -255,9 +247,22 @@
             border-radius: 8px;
             margin-bottom: 20px;
             border: 1px solid #4a7856;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        }
+
+        .alert-danger {
+            background: #1a1a1a;
+            color: #ff6b6b;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ff6b6b;
+        }
+
+        .field-error {
+            color: #ff6b6b;
+            font-size: 0.82rem;
+            margin-top: 4px;
+            display: block;
         }
 
         .btn-save {
@@ -309,171 +314,206 @@
             justify-content: center;
         }
 
+        .no-member-notice {
+            background: #1a1a1a;
+            border: 1px dashed #4a7856;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #cccccc;
+            margin-bottom: 20px;
+        }
+
+        .no-member-notice p {
+            margin: 0 0 10px;
+        }
+
         @media (max-width: 600px) {
             .row {
                 grid-template-columns: 1fr;
                 gap: 15px;
             }
-            
             .nav-links {
                 gap: 1rem;
             }
-            
             .main-content {
                 margin-top: 120px;
-            }
-            
-            .detail-item {
-                flex-direction: column;
-                gap: 5px;
             }
         }
     </style>
 </head>
 <body>
     <nav class="top-nav">
-    <ul class="nav-links">
-        @auth
-            <li><a href="{{ route('dashboard') }}" class="nav-item">Dashboard</a></li>
-            <li>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="nav-item" style="background: none; border: none; cursor: pointer;">Logout</button>
-                </form>
-            </li>
-        @else
-            <li><a href="{{ route('home') }}" class="nav-item">Home</a></li>
-            <li><a href="{{ route('members.index') }}" class="nav-item">Members</a></li>
-            <li><a href="{{ route('login') }}" class="nav-item">Login</a></li>
-        @endauth
-    </ul>
-</nav>
+        <ul class="nav-links">
+            @auth
+                <li><a href="{{ route('home') }}" class="nav-item">Home</a></li>
+                <li><a href="{{ route('members.index') }}" class="nav-item">Members</a></li>
+                <li><a href="{{ route('dashboard') }}" class="nav-item">Dashboard</a></li>
+                <li>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="nav-item" style="background:none;border:none;cursor:pointer;">Logout</button>
+                    </form>
+                </li>
+            @else
+                <li><a href="{{ route('home') }}" class="nav-item">Home</a></li>
+                <li><a href="{{ route('members.index') }}" class="nav-item">Members</a></li>
+                <li><a href="{{ route('login') }}" class="nav-item">Login</a></li>
+            @endauth
+        </ul>
+    </nav>
 
     <div class="main-content">
         <div class="dashboard-card">
             <div class="card-header">
-                <h1>
-                    <i class="bi bi-person-circle"></i>
-                    My Dashboard
-                </h1>
+                <h1>My Dashboard</h1>
             </div>
 
             <div class="card-body">
                 @if(session('success'))
-                    <div class="alert-success">
-                        <i class="bi bi-check-circle-fill"></i>
-                        {{ session('success') }}
+                    <div class="alert-success">{{ session('success') }}</div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert-danger">
+                        <ul style="margin:0;padding-left:20px;">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
                     </div>
                 @endif
 
+                {{-- Welcome uses display_name accessor which gracefully falls back --}}
                 <div class="welcome-section">
-                    <h2>Welcome, {{ $user->first_name }} {{ $user->last_name }}!</h2>
-                    <p>This is your personal member profile. You can view and edit your member information here.</p>
+                    <h2>Welcome, {{ $user->display_name }}!</h2>
+                    <p>This is your personal member profile. You can view and edit your member card here.</p>
                 </div>
 
                 @if(!isset($editMode) || !$editMode)
-                    <!-- View Mode - Member Card -->
-                    <div class="member-card">
-                        <img src="{{ asset('images/' . ($member->image ?? 'default.jpg')) }}" alt="{{ $member->name ?? $user->name }}" class="member-photo">
-                        <div class="member-info">
-                            <div class="member-name">{{ $member->name ?? $user->first_name . ' ' . $user->last_name }}</div>
-                            <div class="member-role">{{ $member->role ?? 'Member' }}</div>
-                            <div class="member-bio">{{ $member->bio ?? 'No bio provided.' }}</div>
-                            
-                            <div class="member-details">
-                                <div class="detail-item">
-                                    <span class="detail-label">Age:</span>
-                                    <span class="detail-value">{{ $member->age ?? 'N/A' }}</span>
+                    {{-- ── VIEW MODE ─────────────────────────────────── --}}
+                    @if($member)
+                        <div class="member-card">
+                            <img src="{{ asset('images/' . ($member->image ?? 'default.jpg')) }}"
+                                 alt="{{ $member->name }}"
+                                 class="member-photo">
+                            <div class="member-info">
+                                <div class="member-name">{{ $member->name }}</div>
+                                <div class="member-role">{{ $member->role }}</div>
+                                <div class="member-bio">{{ $member->bio }}</div>
+
+                                <div class="member-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Age:</span>
+                                        <span class="detail-value">{{ $member->age }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Year:</span>
+                                        <span class="detail-value">{{ $member->year }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Email:</span>
+                                        <span class="detail-value">{{ $member->email }}</span>
+                                    </div>
                                 </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Year:</span>
-                                    <span class="detail-value">{{ $member->year ?? 'N/A' }}</span>
+
+                                <div class="member-skills">
+                                    @if(is_array($member->skills) && count($member->skills) > 0)
+                                        @foreach($member->skills as $skill)
+                                            <span class="skill-tag">{{ $skill }}</span>
+                                        @endforeach
+                                    @else
+                                        <span class="skill-tag">No skills listed</span>
+                                    @endif
                                 </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Email:</span>
-                                    <span class="detail-value">{{ $member->email ?? $user->email }}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="member-skills">
-                                @if(isset($member->skills) && is_array($member->skills) && count($member->skills) > 0)
-                                    @foreach($member->skills as $skill)
-                                        <span class="skill-tag">{{ $skill }}</span>
-                                    @endforeach
-                                @else
-                                    <span class="skill-tag">No skills listed</span>
-                                @endif
                             </div>
                         </div>
-                    </div>
-                    
+                    @else
+                        <div class="no-member-notice">
+                            <p>Your account is not linked to a member card yet.</p>
+                            <p>Click <strong>Edit My Profile</strong> below to create one.</p>
+                        </div>
+                    @endif
+
                     <div class="button-group">
-                        <a href="{{ route('dashboard.edit') }}" class="btn-edit">
-                            <i class="bi bi-pencil"></i> Edit My Profile
-                        </a>
+                        <a href="{{ route('dashboard.edit') }}" class="btn-edit">Edit My Profile</a>
                     </div>
+
                 @else
-                    <!-- Edit Mode -->
+                    {{-- ── EDIT MODE ─────────────────────────────────── --}}
                     <form action="{{ route('dashboard.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
                         <div class="row">
                             <div class="form-group">
-                                <label class="form-label"><i class="bi bi-person"></i> Name</label>
-                                <input type="text" name="name" class="form-control" value="{{ old('name', $member->name ?? '') }}" required>
+                                <label class="form-label">Name *</label>
+                                <input type="text" name="name" class="form-control"
+                                       value="{{ old('name', $member->name ?? $user->display_name) }}" required>
+                                @error('name')<span class="field-error">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label"><i class="bi bi-tag"></i> Role</label>
-                                <input type="text" name="role" class="form-control" value="{{ old('role', $member->role ?? '') }}" required>
+                                <label class="form-label">Role *</label>
+                                <input type="text" name="role" class="form-control"
+                                       value="{{ old('role', $member->role ?? '') }}" required>
+                                @error('role')<span class="field-error">{{ $message }}</span>@enderror
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="form-group">
-                                <label class="form-label"><i class="bi bi-calendar"></i> Age</label>
-                                <input type="number" name="age" class="form-control" value="{{ old('age', $member->age ?? '') }}" required>
+                                <label class="form-label">Age *</label>
+                                <input type="number" name="age" class="form-control" min="1" max="100"
+                                       value="{{ old('age', $member->age ?? '') }}" required>
+                                @error('age')<span class="field-error">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label"><i class="bi bi-calendar"></i> Year</label>
-                                <input type="text" name="year" class="form-control" value="{{ old('year', $member->year ?? '') }}" required>
+                                <label class="form-label">Year *</label>
+                                <input type="text" name="year" class="form-control"
+                                       value="{{ old('year', $member->year ?? '') }}" required>
+                                @error('year')<span class="field-error">{{ $message }}</span>@enderror
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="form-group">
-                                <label class="form-label"><i class="bi bi-envelope"></i> Email</label>
-                                <input type="email" name="email" class="form-control" value="{{ old('email', $member->email ?? $user->email) }}" required>
+                                <label class="form-label">Email *</label>
+                                <input type="email" name="email" class="form-control"
+                                       value="{{ old('email', $member->email ?? $user->email) }}" required>
+                                @error('email')<span class="field-error">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label"><i class="bi bi-chat-dots"></i> Bio</label>
-                                <textarea name="bio" class="form-control" rows="3">{{ old('bio', $member->bio ?? '') }}</textarea>
+                                <label class="form-label">Bio *</label>
+                                <textarea name="bio" class="form-control" rows="3" required>{{ old('bio', $member->bio ?? '') }}</textarea>
+                                @error('bio')<span class="field-error">{{ $message }}</span>@enderror
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label"><i class="bi bi-tags"></i> Skills (comma separated)</label>
-                            <input type="text" name="skills" class="form-control" value="{{ old('skills', isset($member->skills) && is_array($member->skills) ? implode(', ', $member->skills) : '') }}" placeholder="e.g., Web Development, Leadership, Design">
+                            <label class="form-label">Skills <small style="color:#666;">(comma separated)</small></label>
+                            <input type="text" name="skills" class="form-control"
+                                   value="{{ old('skills', isset($member->skills) && is_array($member->skills) ? implode(', ', $member->skills) : '') }}"
+                                   placeholder="e.g., Web Development, Leadership, Design">
+                            @error('skills')<span class="field-error">{{ $message }}</span>@enderror
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label"><i class="bi bi-image"></i> Profile Image</label>
+                            <label class="form-label">Profile Image</label>
                             <input type="file" name="image" class="form-control" accept="image/*">
-                            @if($member->image ?? false)
-                                <p style="color: #cccccc; margin-top: 5px;">Current: {{ $member->image }}</p>
+                            @if($member && $member->image)
+                                <small style="color:#cccccc;margin-top:5px;display:block;">
+                                    Current: {{ $member->image }}
+                                </small>
                             @endif
+                            @error('image')<span class="field-error">{{ $message }}</span>@enderror
                         </div>
 
                         <div class="button-group">
-                            <button type="submit" class="btn-save">
-                                <i class="bi bi-check-lg"></i> Save Changes
-                            </button>
-                            <a href="{{ route('dashboard') }}" class="btn-edit">
-                                <i class="bi bi-x-lg"></i> Cancel
-                            </a>
+                            <button type="submit" class="btn-save">Save Changes</button>
+                            <a href="{{ route('dashboard') }}" class="btn-edit">Cancel</a>
                         </div>
                     </form>
                 @endif
