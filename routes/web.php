@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\UserDashboardController;
+use App\Http\Controllers\MemberAccountController;
 use Illuminate\Support\Facades\Route;
 
 // ─────────────────────────────────────────────
@@ -17,48 +20,62 @@ Route::get('/members', function () {
 })->name('members.index');
 
 // ─────────────────────────────────────────────
-// ADMIN LOGIN ROUTES (separate from member login)
+// MEMBER AUTH — guest only
 // ─────────────────────────────────────────────
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/login', [App\Http\Controllers\Auth\AdminLoginController::class, 'showLoginForm'])
-        ->name('login.form')
-        ->middleware('guest');
-    Route::post('/login', [App\Http\Controllers\Auth\AdminLoginController::class, 'login'])
-        ->name('login.submit')
-        ->middleware('guest');
+Route::middleware('guest')->group(function () {
+    Route::get('/login',  [LoginController::class, 'showMemberLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'memberLogin'])->name('login.submit');
+
+    // Forgot password — 3-step OTP flow
+    Route::get( '/forgot-password',        [ForgotPasswordController::class, 'showForgotForm'])   ->name('password.request');
+    Route::post('/forgot-password',        [ForgotPasswordController::class, 'sendOtp'])           ->name('password.email');
+    Route::get( '/verify-otp',             [ForgotPasswordController::class, 'showVerifyOtpForm']) ->name('password.verify-otp');
+    Route::post('/verify-otp',             [ForgotPasswordController::class, 'verifyOtp'])         ->name('password.verify-otp.submit');
+    Route::get( '/reset-password',         [ForgotPasswordController::class, 'showResetForm'])     ->name('password.reset-form');
+    Route::post('/reset-password',         [ForgotPasswordController::class, 'resetPassword'])     ->name('password.update');
 });
 
 // ─────────────────────────────────────────────
-// PROTECTED — regular users only (is_admin = 0)
+// ADMIN AUTH — separate login, guest only
+// ─────────────────────────────────────────────
+Route::prefix('admin')->name('admin.')->middleware('guest')->group(function () {
+    Route::get( '/login', [LoginController::class, 'showAdminLoginForm'])->name('login.form');
+    Route::post('/login', [LoginController::class, 'adminLogin'])        ->name('login.submit');
+});
+
+// ─────────────────────────────────────────────
+// LOGOUT — auth required
+// ─────────────────────────────────────────────
+Route::post('/logout', [LoginController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
+
+// ─────────────────────────────────────────────
+// MEMBER AREA — regular users only (is_admin = 0)
 // ─────────────────────────────────────────────
 Route::middleware(['auth', 'user'])->group(function () {
-    Route::get('/dashboard',       [UserDashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/edit',  [UserDashboardController::class, 'edit'])->name('dashboard.edit');
-    Route::put('/dashboard',       [UserDashboardController::class, 'update'])->name('dashboard.update');
+    Route::get('/dashboard',      [UserDashboardController::class, 'index']) ->name('dashboard');
+    Route::get('/dashboard/edit', [UserDashboardController::class, 'edit'])  ->name('dashboard.edit');
+    Route::put('/dashboard',      [UserDashboardController::class, 'update'])->name('dashboard.update');
 
-    Route::get('/member-account',       [App\Http\Controllers\MemberAccountController::class, 'index'])->name('member.account');
-    Route::get('/member-account/edit',  [App\Http\Controllers\MemberAccountController::class, 'edit'])->name('member.account.edit');
-    Route::put('/member-account',       [App\Http\Controllers\MemberAccountController::class, 'update'])->name('member.account.update');
+    Route::get('/member-account',            [MemberAccountController::class, 'index'])         ->name('member.account');
+    Route::get('/member-account/edit',       [MemberAccountController::class, 'edit'])          ->name('member.account.edit');
+    Route::put('/member-account',            [MemberAccountController::class, 'update'])        ->name('member.account.update');
+    Route::post('/member-account/password',  [MemberAccountController::class, 'updatePassword'])->name('member.account.password');
 });
 
 // ─────────────────────────────────────────────
-// PROTECTED — admin only (is_admin = 1)
+// ADMIN AREA — admin only (is_admin = 1)
 // ─────────────────────────────────────────────
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return redirect()->route('admin.members.index');
     })->name('dashboard');
 
-    Route::get('/members',              [MemberController::class, 'index'])->name('members.index');
-    Route::get('/members/create',       [MemberController::class, 'create'])->name('members.create');
-    Route::post('/members',             [MemberController::class, 'store'])->name('members.store');
-    Route::get('/members/{member}/edit',[MemberController::class, 'edit'])->name('members.edit');
-    Route::put('/members/{member}',     [MemberController::class, 'update'])->name('members.update');
-    Route::delete('/members/{member}',  [MemberController::class, 'destroy'])->name('members.destroy');
+    Route::get(   '/members',               [MemberController::class, 'index'])  ->name('members.index');
+    Route::get(   '/members/create',        [MemberController::class, 'create']) ->name('members.create');
+    Route::post(  '/members',               [MemberController::class, 'store'])  ->name('members.store');
+    Route::get(   '/members/{member}/edit', [MemberController::class, 'edit'])   ->name('members.edit');
+    Route::put(   '/members/{member}',      [MemberController::class, 'update']) ->name('members.update');
+    Route::delete('/members/{member}',      [MemberController::class, 'destroy'])->name('members.destroy');
 });
-
-// ─────────────────────────────────────────────
-// Breeze auth routes (login, register, logout, password reset…)
-// NOTE: 'login' and 'register' named routes live in auth.php
-// ─────────────────────────────────────────────
-require __DIR__.'/auth.php';

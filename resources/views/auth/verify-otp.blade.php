@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - Group 8</title>
+    <title>Verify Code - Group 8</title>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,26 +38,24 @@
         }
         .card-header h1 { font-size: 2rem; color: #fff; margin-bottom: 8px; }
         .card-header p  { color: #ccc; font-size: 0.95rem; }
+        .email-badge {
+            display: inline-block; background: #1a1a1a;
+            color: #4a7856; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.9rem;
+            border: 1px solid #4a7856; margin-top: 8px;
+            word-break: break-all;
+        }
         .form-group { margin-bottom: 20px; }
         .form-label { display: block; margin-bottom: 8px; font-weight: 600; color: #fff; font-size: 0.95rem; }
-        .form-control {
-            width: 100%; padding: 12px 15px;
+        .otp-input {
+            width: 100%; padding: 16px 15px;
             border: 2px solid #3a3a3a;
             background: #1a1a1a; color: #fff;
-            border-radius: 10px; font-size: 1rem;
-            transition: all 0.3s;
+            border-radius: 10px; font-size: 2rem;
+            font-weight: 700; letter-spacing: 0.5rem;
+            text-align: center; transition: all 0.3s;
         }
-        .form-control:focus { outline: none; border-color: #4a7856; box-shadow: 0 0 0 3px rgba(74,120,86,0.2); }
-        .form-control::placeholder { color: #666; }
-        .password-field { position: relative; }
-        .toggle-password {
-            position: absolute; right: 15px; top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer; color: #ccc; transition: color 0.3s;
-            background: none; border: none;
-        }
-        .toggle-password:hover { color: #4a7856; }
-        .hint { color: #888; font-size: 0.82rem; margin-top: 5px; }
+        .otp-input:focus { outline: none; border-color: #4a7856; box-shadow: 0 0 0 3px rgba(74,120,86,0.2); }
         .btn-submit {
             width: 100%; padding: 14px;
             background: #4a7856; color: white;
@@ -69,6 +67,7 @@
         .btn-submit:hover { transform: translateY(-2px); background: #5d8f6b; box-shadow: 0 10px 20px rgba(74,120,86,0.3); }
         .alert { padding: 12px 15px; border-radius: 10px; margin-bottom: 20px; font-size: 0.95rem; }
         .alert-danger  { background: #2d2d2d; color: #ff6b6b; border: 1px solid #ff6b6b; }
+        .alert-success { background: #2d2d2d; color: #4a7856; border: 1px solid #4a7856; }
         .error-text { color: #ff6b6b; font-size: 0.85rem; margin-top: 6px; }
         .footer-note { text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #3a3a3a; }
         .footer-note a { color: #4a7856; text-decoration: none; font-size: 0.9rem; }
@@ -82,48 +81,39 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                <div class="badge">NEW PASSWORD</div>
-                <h1>Reset Password</h1>
-                <p>Create a new password for <strong style="color:#4a7856;">{{ $email }}</strong></p>
+                <div class="badge">VERIFY CODE</div>
+                <h1>Enter Your Code</h1>
+                <p>We sent a 6-digit code to:</p>
+                <div class="email-badge">{{ $email }}</div>
             </div>
+
+            @if (session('status'))
+                <div class="alert alert-success">{{ session('status') }}</div>
+            @endif
 
             @if ($errors->any())
                 <div class="alert alert-danger">{{ $errors->first() }}</div>
             @endif
 
-            <form method="POST" action="{{ route('password.update') }}">
+            <form method="POST" action="{{ route('password.verify-otp.submit') }}">
                 @csrf
-
                 <div class="form-group">
-                    <label class="form-label">New Password</label>
-                    <div class="password-field">
-                        <input type="password" name="password" id="password"
-                               class="form-control" placeholder="Minimum 8 characters" required>
-                        <button type="button" class="toggle-password" onclick="togglePw('password','icon1')">👁️</button>
-                    </div>
-                    <p class="hint">Minimum 8 characters.</p>
-                    @error('password')
+                    <label class="form-label">6-Digit Code</label>
+                    <input type="text" name="code" class="otp-input"
+                           maxlength="6" pattern="\d{6}"
+                           placeholder="000000"
+                           autofocus autocomplete="one-time-code">
+                    @error('code')
                         <p class="error-text">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Confirm New Password</label>
-                    <div class="password-field">
-                        <input type="password" name="password_confirmation" id="password_confirmation"
-                               class="form-control" placeholder="Repeat your password" required>
-                        <button type="button" class="toggle-password" onclick="togglePw('password_confirmation','icon2')">👁️</button>
-                    </div>
-                    @error('password_confirmation')
-                        <p class="error-text">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <button type="submit" class="btn-submit">Save New Password</button>
+                <button type="submit" class="btn-submit">Verify Code</button>
             </form>
 
             <div class="footer-note">
-                <a href="{{ route('login') }}">← Back to Member Login</a>
+                <p style="color:#ccc; font-size:0.9rem; margin-bottom:8px;">Didn't receive the code?</p>
+                <a href="{{ route('password.request') }}">Request a new code</a>
             </div>
         </div>
 
@@ -131,19 +121,5 @@
             <a href="{{ url('/') }}">← Back to Home</a>
         </div>
     </div>
-
-    <script>
-        function togglePw(fieldId, iconId) {
-            const field = document.getElementById(fieldId);
-            const btn   = field.nextElementSibling;
-            if (field.type === 'password') {
-                field.type  = 'text';
-                btn.textContent = '🔒';
-            } else {
-                field.type  = 'password';
-                btn.textContent = '👁️';
-            }
-        }
-    </script>
 </body>
 </html>

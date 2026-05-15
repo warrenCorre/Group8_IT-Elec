@@ -10,11 +10,6 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'first_name',
@@ -25,34 +20,27 @@ class User extends Authenticatable
         'is_admin',
         'department',
         'block',
+        'failed_login_attempts',
+        'locked_until',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'is_admin'          => 'boolean',
+            'email_verified_at'      => 'datetime',
+            'password'               => 'hashed',
+            'is_admin'               => 'boolean',
+            'locked_until'           => 'datetime',
         ];
     }
 
     /**
-     * Get full display name, falling back to `name` if first/last not set.
+     * Full display name: uses first_name + last_name if set, otherwise falls back to name.
      */
     public function getDisplayNameAttribute(): string
     {
